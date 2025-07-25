@@ -29,6 +29,18 @@ class ChatViewController: UIViewController {
         
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow),
+                                               name: UIResponder.keyboardWillShowNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide),
+                                               name: UIResponder.keyboardWillHideNotification, object: nil)
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        NotificationCenter.default.removeObserver(self)
+    }
+    
     // MARK: - Setup TableView
     
     private func setupTableView() {
@@ -48,6 +60,8 @@ class ChatViewController: UIViewController {
         
         inputTextField.placeholder = "Ask away..."
         inputTextField.borderStyle = .roundedRect
+        inputTextField.layer.cornerRadius = 8
+        inputTextField.layer.masksToBounds = true
         
         sendButton.setTitle("↑", for: .normal)
         sendButton.addTarget(self, action: #selector(sendButtonTapped), for: .touchUpInside)
@@ -71,16 +85,17 @@ class ChatViewController: UIViewController {
             inputContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             inputContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             inputContainerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-            inputContainerView.heightAnchor.constraint(equalToConstant: 50),
             
+            inputTextField.topAnchor.constraint(equalTo: inputContainerView.topAnchor, constant: 6),
+            inputTextField.bottomAnchor.constraint(equalTo: inputContainerView.bottomAnchor, constant: -6),
             inputTextField.leadingAnchor.constraint(equalTo: inputContainerView.leadingAnchor, constant: 12),
-            inputTextField.centerYAnchor.constraint(equalTo: inputContainerView.centerYAnchor),
             inputTextField.trailingAnchor.constraint(equalTo: sendButton.leadingAnchor, constant: -8),
-            inputTextField.heightAnchor.constraint(equalToConstant: 38),
+            inputTextField.heightAnchor.constraint(greaterThanOrEqualToConstant: 36),
             
             sendButton.trailingAnchor.constraint(equalTo: inputContainerView.trailingAnchor, constant: -12),
             sendButton.centerYAnchor.constraint(equalTo: inputContainerView.centerYAnchor),
         ])
+        sendButton.widthAnchor.constraint(equalToConstant: 32).isActive = true
     }
     
     //MARK: - Keyboard handling
