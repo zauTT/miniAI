@@ -15,6 +15,8 @@ class ChatViewController: UIViewController {
     private let inputTextField = UITextField()
     private let sendButton = UIButton(type: .system)
     
+    private var inputContainerBottomConstraint: NSLayoutConstraint = NSLayoutConstraint()
+    
     private var messages: [ChatMessage] = []
     
     override func viewDidLoad() {
@@ -76,6 +78,8 @@ class ChatViewController: UIViewController {
         inputTextField.translatesAutoresizingMaskIntoConstraints = false
         sendButton.translatesAutoresizingMaskIntoConstraints = false
         
+        inputContainerBottomConstraint = inputContainerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -85,6 +89,7 @@ class ChatViewController: UIViewController {
             inputContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             inputContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             inputContainerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            inputContainerBottomConstraint,
             
             inputTextField.topAnchor.constraint(equalTo: inputContainerView.topAnchor, constant: 6),
             inputTextField.bottomAnchor.constraint(equalTo: inputContainerView.bottomAnchor, constant: -6),
@@ -106,13 +111,29 @@ class ChatViewController: UIViewController {
     }
     
     @objc private func keyboardWillShow(_ notification: Notification) {
-        if let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect {
-            view.frame.origin.y = -keyboardFrame.height + view.safeAreaInsets.bottom
+        guard let userInfo = notification.userInfo,
+              let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
+              let animationDuration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval else { return }
+        
+        let keyboardHeigth = keyboardFrame.height - view.safeAreaInsets.bottom
+        
+        inputContainerBottomConstraint.constant = -keyboardHeigth
+        
+        UIView.animate(withDuration: animationDuration) {
+            self.view.layoutIfNeeded()
+            self.scrollToBottom()
         }
     }
     
     @objc private func keyboardWillHide(_ notification: Notification) {
-        view.frame.origin.y = 0
+        guard let userInfo = notification.userInfo,
+              let animationDuration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval else { return }
+        
+        inputContainerBottomConstraint.constant = 0
+        
+        UIView.animate(withDuration: animationDuration) {
+            self.view.layoutIfNeeded()
+        }
     }
     
     //MARK: - Actions
@@ -132,6 +153,8 @@ class ChatViewController: UIViewController {
         tableView.scrollToRow(at: IndexPath, at: .bottom, animated: true)
     }
 }
+
+//MARK: - Extensions
 
 extension ChatViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
